@@ -64,6 +64,9 @@ void screen_init(void) {
 }
 
 void text_clear(void) {
+    HIDE_WIN;
+    SCX_REG = 0;
+    SCY_REG = 0;
     text_box(0, 0, SCREEN_W, SCREEN_H);
 }
 
@@ -135,6 +138,46 @@ void text_box(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
         set_bkg_tiles(x, y, w, 1, buf);
         y++;
     }
+}
+
+#define WIN_W SCREEN_W
+#define WIN_H 5
+#define WIN_X 7
+#define WIN_Y 104
+
+/* กล่องบทสนทนาล่างจอ (window layer) จะไม่เลื่อนตามแผนที่ */
+void win_dialog_begin(void) {
+    uint8_t buf[WIN_W];
+    uint8_t i, y;
+
+    for (i = 0; i < WIN_W; i++) {
+        buf[i] = TILE_BLACK;
+    }
+    for (y = 0; y < WIN_H; y++) {
+        set_win_tiles(0, y, WIN_W, 1, buf);
+    }
+    WX_REG = WIN_X;
+    WY_REG = WIN_Y;
+    SHOW_WIN;
+}
+
+uint8_t win_text_put(uint8_t x, uint8_t y, const char *s) {
+    uint8_t buf[WIN_W];
+    uint8_t n = 0;
+
+    while (*s && (uint8_t)(x + n) < WIN_W) {
+        buf[n] = font_tile(*s);
+        n++;
+        s++;
+    }
+    if (n) {
+        set_win_tiles(x, y, n, 1, buf);
+    }
+    return (uint8_t)(x + n);
+}
+
+void win_dialog_end(void) {
+    HIDE_WIN;
 }
 
 void wait_a_press(void) {

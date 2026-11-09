@@ -4,8 +4,8 @@
 #include "player.h"
 
 Player player;
-uint8_t px = 32;
-uint8_t py = 80;
+uint16_t px = 32;
+uint16_t py = 80;
 
 void player_init(void) {
     player.level = 1;

@@ -14,7 +14,7 @@ extern const uint8_t sprite_tiles[];
 extern const uint8_t font_glyphs[];
 extern const char font_chars[];
 
-/* แผนที่แต่ละ Act: 18 แถว x 20 คอลัมน์ (+ null) */
-extern const char area_maps[AREA_COUNT][SCREEN_H][SCREEN_W + 1];
+/* แผนที่แต่ละ Act: 18 แถว x 40 คอลัมน์ (+ null) */
+extern const char area_maps[AREA_COUNT][SCREEN_H][MAP_W + 1];
 
 #endif /* ASSETS_H */

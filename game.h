@@ -7,6 +7,9 @@
 /* ---------- หน้าจอ/ไทล์ ---------- */
 #define SCREEN_W 20
 #define SCREEN_H 18
+#define MAP_W    40              /* ความกว้างแผนที่จริง (ไทล์) */
+#define MAP_MAX_X ((MAP_W * 8) - 8)
+#define MAP_MAX_Y ((SCREEN_H * 8) - 8)
 
 /* ลำดับไทล์พื้นหลัง (ต้องตรงกับ map_tiles ใน assets.c) */
 #define TILE_GRASS     0
@@ -85,10 +88,11 @@ extern Player player;
 extern Monster monster;
 extern GameState game_state;
 extern uint8_t current_area;
-extern uint8_t px, py;             /* ตำแหน่งผู้เล่น (พิกเซล) */
-extern uint8_t enemy_px, enemy_py; /* ตำแหน่งศัตรูบนแผนที่ */
+extern uint16_t px, py;             /* ตำแหน่งผู้เล่น (พิกเซล) */
+extern uint16_t enemy_px, enemy_py; /* ตำแหน่งศัตรูบนแผนที่ */
 extern uint8_t enemy_kind;         /* 0=slime 1=skeleton 2=bat 3=boss */
 extern uint8_t enemy_sprite_tile;
+extern uint8_t map_cam_x;          /* กล้องแนวนอน (พิกเซล) */
 
 /* ---------- ฟังก์ชันเปลี่ยนสถานะ ---------- */
 void enter_title(void);
@@ -104,6 +108,6 @@ void battle_update(void);
 void menu_update(void);
 void ending_update(void);
 
-#define ABS_DIFF(a, b) ((a) > (b) ? (uint8_t)((a) - (b)) : (uint8_t)((b) - (a)))
+#define ABS_DIFF(a, b) ((a) > (b) ? (uint16_t)((a) - (b)) : (uint16_t)((b) - (a)))
 
 #endif /* GAME_H */

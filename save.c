@@ -8,7 +8,7 @@
 #define SAVE_ADDR   ((SaveData *)0xA000)
 #define SAVE_MAGIC0 'C'
 #define SAVE_MAGIC1 'C'
-#define SAVE_VERSION 1
+#define SAVE_VERSION 2
 
 typedef struct {
     uint8_t  magic0;
@@ -28,8 +28,8 @@ typedef struct {
     uint16_t wins;
 
     uint8_t  area;
-    uint8_t  x;
-    uint8_t  y;
+    uint16_t x;
+    uint16_t y;
 } SaveData;
 
 static void save_enable(void) {

@@ -14,39 +14,51 @@ GameState game_state;
 uint8_t current_area;
 
 static uint8_t prev_joy;
-static uint8_t banner_timer;
 static uint8_t enemy_move_timer;
 static uint8_t enemy_cooldown;
 
 /* -------------------------------------------------------------------------
  * จัดวางสไปรท์บนแผนที่
  * ---------------------------------------------------------------------- */
-static void place_overworld_sprites(void) {
-    set_sprite_tile(0, SPR_HERO);
-    move_sprite(0, px, py);
+static void place_world_sprite(uint8_t slot, uint8_t tile, uint16_t wx, uint16_t wy) {
+    int16_t sx = (int16_t)wx - (int16_t)map_cam_x;
 
-    set_sprite_tile(1, enemy_sprite_tile);
-    move_sprite(1, enemy_px, enemy_py);
+    if (sx < 0 || sx > (SCREEN_W * 8)) {
+        hide_sprite(slot);
+        return;
+    }
+    set_sprite_tile(slot, tile);
+    move_sprite(slot, (uint8_t)(sx + 8), (uint8_t)(wy + 8));
+}
+
+static void place_overworld_sprites(void) {
+    place_world_sprite(0, SPR_HERO, px, py);
+    place_world_sprite(1, enemy_sprite_tile, enemy_px, enemy_py);
 
     if (npc_active) {
-        set_sprite_tile(2, SPR_ELDER);
-        move_sprite(2, npc_px, npc_py);
+        place_world_sprite(2, SPR_ELDER, npc_px, npc_py);
     } else {
         hide_sprite(2);
     }
 }
 
-static void show_area_banner(void) {
-    text_box(0, 1, SCREEN_W, 2);
-    text_put(1, 1, map_area_act(current_area));
-    text_put(1, 2, map_area_name(current_area));
-    banner_timer = 100;
+static void show_area_intro(void) {
+    hide_sprite(0);
+    hide_sprite(1);
+    hide_sprite(2);
+
+    text_clear();
+    text_put(2, 4, map_area_act(current_area));
+    text_put(1, 6, map_area_name(current_area));
+    delay_frames(60);
 }
 
 static void start_world(void) {
-    map_load(current_area);
     map_spawn_enemy(current_area);
     map_setup_npc(current_area);
+
+    show_area_intro();
+    map_load(current_area);
     place_overworld_sprites();
     SHOW_SPRITES;
 
@@ -61,7 +73,6 @@ static void start_world(void) {
  * ---------------------------------------------------------------------- */
 void enter_title(void) {
     game_state = STATE_TITLE;
-    banner_timer = 0;
 
     hide_sprite(0);
     hide_sprite(1);
@@ -102,7 +113,6 @@ void title_update(void) {
         }
         waitpadup();
         start_world();
-        show_area_banner();
     } else if ((keys & J_B) && save_exists()) {
         sfx_confirm();
         save_erase();
@@ -110,7 +120,6 @@ void title_update(void) {
         current_area = AREA_PLAINS;
         waitpadup();
         start_world();
-        show_area_banner();
     }
 }
 
@@ -147,19 +156,19 @@ static void try_move(int8_t dx, int8_t dy) {
     int16_t nx = (int16_t)px + dx;
     int16_t ny = (int16_t)py + dy;
 
-    if (nx < 0 || ny < 0 || nx > 152 || ny > 136) {
+    if (nx < 0 || ny < 0 || nx > MAP_MAX_X || ny > MAP_MAX_Y) {
         return;
     }
-    if (map_is_solid_px((uint8_t)nx, (uint8_t)ny)) {
+    if (map_is_solid_px((uint16_t)nx, (uint16_t)ny)) {
         return;
     }
-    px = (uint8_t)nx;
-    py = (uint8_t)ny;
+    px = (uint16_t)nx;
+    py = (uint16_t)ny;
 }
 
 static void move_enemy(void) {
-    uint8_t nx = enemy_px;
-    uint8_t ny = enemy_py;
+    uint16_t nx = enemy_px;
+    uint16_t ny = enemy_py;
 
     if (enemy_px < px) {
         nx++;
@@ -172,7 +181,7 @@ static void move_enemy(void) {
         ny--;
     }
 
-    if (nx <= 152 && ny <= 136 && !map_is_solid_px(nx, ny)) {
+    if (nx <= MAP_MAX_X && ny <= MAP_MAX_Y && !map_is_solid_px(nx, ny)) {
         enemy_px = nx;
         enemy_py = ny;
     }
@@ -187,7 +196,7 @@ static void change_area(int8_t direction) {
     current_area = next;
 
     /* เข้าจากด้านตรงข้ามเสมอ และอยู่บนทางเดินแถว 8-9 */
-    px = (direction > 0) ? 8 : 152;
+    px = (direction > 0) ? 8 : (uint16_t)(MAP_MAX_X - 8);
     if (py < 64) {
         py = 64;
     } else if (py > 72) {
@@ -198,6 +207,7 @@ static void change_area(int8_t direction) {
     map_spawn_enemy(current_area);
     map_setup_npc(current_area);
 
+    show_area_intro();
     map_load(current_area);
     place_overworld_sprites();
     game_state = STATE_OVERWORLD;
@@ -205,7 +215,6 @@ static void change_area(int8_t direction) {
     enemy_cooldown = 40;
     prev_joy = joypad();
 
-    show_area_banner();
     save_game();
 }
 
@@ -214,16 +223,12 @@ static void talk_to_elder(void) {
     player.mp = player.max_mp;
     sfx_heal();
 
-    text_box(0, 13, SCREEN_W, 4);
-    text_put(1, 13, "ELDER: REST, HERO.");
-    text_put(1, 14, "THE CRYSTAL CALLS.");
-    text_put(1, 15, "HP AND MP RESTORED.");
+    win_dialog_begin();
+    win_text_put(1, 0, "ELDER: REST, HERO.");
+    win_text_put(1, 1, "THE CRYSTAL CALLS.");
+    win_text_put(1, 2, "HP AND MP RESTORED.");
     wait_a_press();
-
-    map_draw_row(13);
-    map_draw_row(14);
-    map_draw_row(15);
-    map_draw_row(16);
+    win_dialog_end();
 
     save_game();
     prev_joy = joypad();
@@ -268,14 +273,12 @@ void overworld_update(void) {
     if (keys & J_LEFT)  { try_move(-1, 0); }
     if (keys & J_RIGHT) { try_move(1, 0); }
 
-    move_sprite(0, px, py);
-
-    /* ทางออกระหว่าง Act */
-    if ((keys & J_RIGHT) && px >= 152 && current_area < AREA_CASTLE) {
+    /* ทางออกระหว่าง Act (ขอบซ้าย/ขวาของแผนที่ 40 ไทล์) */
+    if ((keys & J_RIGHT) && px >= MAP_MAX_X && current_area < AREA_CASTLE) {
         change_area(1);
         return;
     }
-    if ((keys & J_LEFT) && px <= 8 && current_area > AREA_PLAINS) {
+    if ((keys & J_LEFT) && px == 0 && current_area > AREA_PLAINS) {
         change_area(-1);
         return;
     }
@@ -290,7 +293,7 @@ void overworld_update(void) {
             move_enemy();
         }
     }
-    move_sprite(1, enemy_px, enemy_py);
+    place_overworld_sprites();
 
     /* ชนศัตรู -> เข้าฉากต่อสู้ */
     if (enemy_cooldown == 0 &&
@@ -299,15 +302,6 @@ void overworld_update(void) {
         sfx_attack();
         enter_battle();
         return;
-    }
-
-    /* ลบป้ายชื่อพื้นที่หลังแสดงครบเวลา */
-    if (banner_timer) {
-        banner_timer--;
-        if (!banner_timer) {
-            map_draw_row(1);
-            map_draw_row(2);
-        }
     }
 }
 
@@ -377,6 +371,13 @@ void main(void) {
     enter_title();
 
     while (1) {
+        wait_vbl_done();
+
+        /* ปรับกล้องช่วงต้น VBlank เพื่อให้เขียน VRAM ได้ปลอดภัย */
+        if (game_state == STATE_OVERWORLD) {
+            map_scroll_sync();
+        }
+
         switch (game_state) {
             case STATE_TITLE:
                 title_update();
@@ -397,6 +398,5 @@ void main(void) {
                 break;
         }
         bgm_update();
-        wait_vbl_done();
     }
 }

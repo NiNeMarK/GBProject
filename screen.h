@@ -17,6 +17,11 @@ uint8_t text_put_u16(uint8_t x, uint8_t y, uint16_t value);
 void text_clear_line(uint8_t y);
 void text_box(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 
+/* กล่องบทสนทนาบน window layer (ไม่เลื่อนตามแผนที่) */
+void win_dialog_begin(void);
+uint8_t win_text_put(uint8_t x, uint8_t y, const char *s);
+void win_dialog_end(void);
+
 /* รอจนกว่าจะกด A (พร้อม debounce) */
 void wait_a_press(void);
 
