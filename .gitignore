@@ -1,0 +1,15 @@
+# GBDK build artifacts
+*.o
+*.rel
+*.ihx
+*.map
+*.noi
+*.sym
+*.lst
+*.asm
+*.rst
+*.cdb
+
+# Emulator / cartridge RAM files
+*.ram
+*.sav
